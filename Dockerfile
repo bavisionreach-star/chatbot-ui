@@ -21,28 +21,7 @@ RUN npm run build
 FROM nginx:alpine
 RUN rm /etc/nginx/conf.d/default.conf
 COPY --from=builder /app/build /usr/share/nginx/html
-
-# Nginx config with SPA routing and env injection
-RUN cat > /etc/nginx/conf.d/app.conf << 'NGINXCONF'
-server {
-    listen 3000;
-    server_name _;
-    root /usr/share/nginx/html;
-    index index.html;
-
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf)$ {
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-    }
-
-    gzip on;
-    gzip_types text/plain text/css application/json application/javascript text/xml application/xml text/javascript image/svg+xml;
-}
-NGINXCONF
+COPY nginx.conf /etc/nginx/conf.d/app.conf
 
 EXPOSE 3000
 CMD ["nginx", "-g", "daemon off;"]
