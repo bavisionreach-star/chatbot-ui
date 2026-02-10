@@ -13,7 +13,7 @@ ENV REACT_APP_BOT_TAGLINE=$REACT_APP_BOT_TAGLINE
 ENV REACT_APP_ACCENT=$REACT_APP_ACCENT
 
 COPY package*.json ./
-RUN npm ci --production=false
+RUN npm install
 COPY . .
 RUN npm run build
 
