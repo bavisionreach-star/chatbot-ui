@@ -20,13 +20,13 @@ const ACCENT = process.env.REACT_APP_ACCENT || "#6366f1";
 
 // ─── Pipeline step definitions ───
 const PIPELINE_STEPS = [
-  { key: "understanding", label: "Understanding Topic", icon: "🧠", desc: "AI is analyzing the research topic and scope" },
-  { key: "planning", label: "Planning Strategy", icon: "📋", desc: "Preparing search queries for sub-agents" },
-  { key: "searching", label: "Searching the Web", icon: "🔍", desc: "Sub-agents are searching across multiple sources" },
-  { key: "collecting", label: "Collecting Data", icon: "📥", desc: "Reading and extracting data from web pages" },
-  { key: "analyzing", label: "Analyzing Data", icon: "⚡", desc: "AI is processing all collected information" },
-  { key: "generating", label: "Generating Report", icon: "✍️", desc: "Writing a comprehensive research report" },
-  { key: "complete", label: "Research Complete", icon: "✅", desc: "Research ready for preview" },
+  { key: "understanding", label: "Understanding", icon: "brain", desc: "AI is analyzing the research topic and scope", phase: "Prepare" },
+  { key: "planning", label: "Planning", icon: "route", desc: "Preparing search queries for sub-agents", phase: "Prepare" },
+  { key: "searching", label: "Searching", icon: "search", desc: "Sub-agents are searching across multiple sources", phase: "Gather" },
+  { key: "collecting", label: "Collecting", icon: "download", desc: "Reading and extracting data from web pages", phase: "Gather" },
+  { key: "analyzing", label: "Analyzing", icon: "bolt", desc: "AI is processing all collected information", phase: "Analyze" },
+  { key: "generating", label: "Generating", icon: "pen", desc: "Writing a comprehensive research report", phase: "Output" },
+  { key: "complete", label: "Complete", icon: "check", desc: "Research ready for preview", phase: "Output" },
 ];
 
 // ─── Simple Markdown renderer ───
@@ -68,6 +68,12 @@ const injectStyles = () => {
     @keyframes dotPulse { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
     @keyframes progressFlow { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
     @keyframes borderGlow { 0%, 100% { border-color: ${ACCENT}30; } 50% { border-color: ${ACCENT}80; } }
+    @keyframes ripple { 0% { box-shadow: 0 0 0 0 ${ACCENT}30; } 100% { box-shadow: 0 0 0 12px ${ACCENT}00; } }
+    @keyframes slideInRight { from { opacity: 0; transform: translateX(-12px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes breathe { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+    @keyframes orbitSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes expandIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+    @keyframes tickerSlide { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: #0a0a0f; color: #e4e4e7; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; overflow-x: hidden; }
     ::-webkit-scrollbar { width: 6px; }
@@ -376,79 +382,190 @@ function NewResearchView({ topic, setTopic, desc, setDesc, onStart, onBack }) {
 }
 
 
-// ════════════════════════  PIPELINE VIEW  ════════════════════════
+// ════════════════════════  SVG ICONS  ════════════════════════
+
+const StepIcon = ({ name, size = 18, color = "#fff" }) => {
+  const icons = {
+    brain: <><path d="M12 2a6 6 0 0 0-6 6c0 1.5.5 2.8 1.4 3.9L12 18l4.6-6.1A6 6 0 0 0 12 2z" fill="none" stroke={color} strokeWidth="1.5"/><circle cx="10" cy="8" r="1" fill={color}/><circle cx="14" cy="8" r="1" fill={color}/><path d="M9 11c0 0 1.5 2 3 2s3-2 3-2" fill="none" stroke={color} strokeWidth="1.2" strokeLinecap="round"/></>,
+    route: <><path d="M3 17h2a4 4 0 0 0 4-4V7a4 4 0 0 1 4-4h4" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round"/><path d="M15 5l3-2-3-2" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><circle cx="4" cy="17" r="2" fill="none" stroke={color} strokeWidth="1.5"/></>,
+    search: <><circle cx="11" cy="11" r="6" fill="none" stroke={color} strokeWidth="1.5"/><path d="M21 21l-4.35-4.35" stroke={color} strokeWidth="1.5" strokeLinecap="round"/></>,
+    download: <><path d="M12 3v12m0 0l-4-4m4 4l4-4" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" stroke={color} strokeWidth="1.5" strokeLinecap="round" fill="none"/></>,
+    bolt: <><path d="M13 2L4.09 12.83a1 1 0 0 0 .78 1.62H11l-1 7.45L19.91 11.17a1 1 0 0 0-.78-1.62H13l1-7.55z" fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round"/></>,
+    pen: <><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round"/></>,
+    check: <><path d="M20 6L9 17l-5-5" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/></>,
+  };
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none">{icons[name] || null}</svg>;
+};
+
+// ════════════════════════  PIPELINE VIEW (Redesigned)  ════════════════════════
 
 function PipelineView({ steps, detail, topic, error, onBack }) {
+  const [elapsed, setElapsed] = useState(0);
+  const startRef = useRef(Date.now());
+
+  useEffect(() => {
+    const t = setInterval(() => setElapsed(Math.floor((Date.now() - startRef.current) / 1000)), 1000);
+    return () => clearInterval(t);
+  }, []);
+
   const activeStep = steps.length > 0 ? steps[steps.length - 1].step : null;
   const completedSteps = new Set(steps.filter((s) => s.status === "done").map((s) => s.step));
+  const completedCount = completedSteps.size;
+  const totalSteps = PIPELINE_STEPS.length;
+  const pct = completedCount / totalSteps;
+
+  // Build activity log from step events
+  const activityLog = steps.filter(s => s.detail).slice(-5);
+
+  const fmtTime = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
   return (
     <div style={S.viewContainer}>
-      <button style={S.backBtn} onClick={onBack}>← Cancel</button>
+      {/* Top bar */}
+      <div style={P.topBar}>
+        <button style={S.backBtn} onClick={onBack}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#71717a" strokeWidth="2" strokeLinecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          <span style={{ marginLeft: 6 }}>Cancel</span>
+        </button>
+        <div style={P.timer}>
+          <div style={P.timerDot} />
+          <span style={{ fontVariantNumeric: "tabular-nums" }}>{fmtTime(elapsed)}</span>
+        </div>
+      </div>
 
-      <div style={{ ...S.pipelineContainer, animation: "fadeInUp 0.5s ease" }}>
-        <div style={S.pipelineHeader}>
-          <h2 style={S.pipelineTitle}>Researching</h2>
-          <p style={S.pipelineTopic}>"{topic}"</p>
+      <div style={{ ...P.wrapper, animation: "expandIn 0.4s ease" }}>
+        {/* Header */}
+        <div style={P.header}>
+          <div style={P.headerOrb}>
+            <div style={P.orbRing} />
+            <div style={P.orbCore}>
+              {completedCount === totalSteps
+                ? <StepIcon name="check" size={24} color="#22c55e" />
+                : <div style={P.orbSpinner} />}
+            </div>
+          </div>
+          <div style={P.headerTextBlock}>
+            <span style={P.headerLabel}>
+              {completedCount === totalSteps ? "Research Complete" : "Researching"}
+            </span>
+            <h2 style={P.headerTopic}>{topic}</h2>
+          </div>
         </div>
 
-        {/* Pipeline steps */}
-        <div style={S.stepsContainer}>
+        {/* Horizontal progress dots */}
+        <div style={P.progressRow}>
+          {PIPELINE_STEPS.map((step, i) => {
+            const isDone = completedSteps.has(step.key);
+            const isActive = activeStep === step.key && !isDone;
+            return (
+              <React.Fragment key={step.key}>
+                {i > 0 && <div style={P.progressLine(isDone || isActive)} />}
+                <div style={P.progressDotWrap}>
+                  <div style={P.progressDot(isDone, isActive)} title={step.label}>
+                    {isDone && (
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
+                        <path d="M20 6L9 17l-5-5" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    )}
+                    {isActive && <div style={{width:6,height:6,borderRadius:"50%",background:"#fff",animation:"pulse 1s infinite"}} />}
+                  </div>
+                  <span style={P.progressLabel(isDone, isActive)}>{step.label}</span>
+                </div>
+              </React.Fragment>
+            );
+          })}
+        </div>
+
+        {/* Overall progress bar */}
+        <div style={P.barOuter}>
+          <div style={P.barInner(pct)} />
+        </div>
+        <div style={P.barLabel}>{Math.round(pct * 100)}% complete</div>
+
+        {/* Step cards */}
+        <div style={P.cardsContainer}>
           {PIPELINE_STEPS.map((step, i) => {
             const isDone = completedSteps.has(step.key);
             const isActive = activeStep === step.key && !isDone;
             const isPending = !isDone && !isActive;
 
+            if (isPending && completedCount === 0 && i > 2) return null; // hide far-future steps initially
+
             return (
-              <div key={step.key} style={{ animation: `fadeInUp 0.4s ease ${i * 0.1}s both` }}>
-                {/* Connector line */}
-                {i > 0 && (
-                  <div style={S.connector(isDone || isActive)} />
-                )}
-                <div style={S.stepRow(isDone, isActive)}>
-                  {/* Status indicator */}
-                  <div style={S.stepIcon(isDone, isActive)}>
+              <div key={step.key} style={{ ...P.card(isDone, isActive), animation: `fadeInUp 0.35s ease ${i * 0.06}s both` }}>
+                <div style={P.cardLeft}>
+                  <div style={P.cardIcon(isDone, isActive)}>
                     {isDone ? (
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <path d="M4 8l3 3 5-6" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <path d="M20 6L9 17l-5-5" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                     ) : isActive ? (
-                      <div style={S.spinnerSmall} />
+                      <div style={P.cardSpinner} />
                     ) : (
-                      <span style={{ fontSize: 16 }}>{step.icon}</span>
+                      <StepIcon name={step.icon} size={16} color={isPending ? "#52525b" : "#a5b4fc"} />
                     )}
                   </div>
-
-                  {/* Step content */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={S.stepLabel(isDone, isActive)}>{step.label}</div>
-                    <div style={S.stepDesc(isPending)}>
-                      {isActive ? (detail || step.desc) : step.desc}
-                    </div>
-                    {/* Show data for search step */}
-                    {isActive && steps.filter((s) => s.step === step.key).map((s, j) => (
-                      s.data && s.data.queries && (
-                        <div key={j} style={S.stepData}>
-                          {s.data.queries.map((q, qi) => (
-                            <div key={qi} style={S.queryTag}>🔎 {q}</div>
-                          ))}
-                        </div>
-                      )
-                    ))}
-                  </div>
-
-                  {/* Timing badge */}
-                  {isDone && <div style={S.checkBadge}>✓</div>}
+                  {i < PIPELINE_STEPS.length - 1 && <div style={P.cardConnector(isDone)} />}
                 </div>
+                <div style={P.cardBody}>
+                  <div style={P.cardHeader}>
+                    <span style={P.cardPhase(isDone, isActive)}>{step.phase}</span>
+                    <span style={P.cardLabel(isDone, isActive)}>{step.label}</span>
+                  </div>
+                  <p style={P.cardDesc(isPending)}>
+                    {isActive ? (detail || step.desc) : step.desc}
+                  </p>
+                  {/* Query tags for search step */}
+                  {(isDone || isActive) && steps.filter(s => s.step === step.key && s.data && s.data.queries).map((s, j) => (
+                    <div key={j} style={P.tagRow}>
+                      {s.data.queries.map((q, qi) => (
+                        <span key={qi} style={P.tag}>
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" style={{marginRight:4,flexShrink:0}}>
+                            <circle cx="11" cy="11" r="6" stroke="#818cf8" strokeWidth="2"/><path d="M21 21l-4.35-4.35" stroke="#818cf8" strokeWidth="2" strokeLinecap="round"/>
+                          </svg>
+                          {q}
+                        </span>
+                      ))}
+                    </div>
+                  ))}
+                  {/* Result count for search/collecting steps */}
+                  {isDone && steps.filter(s => s.step === step.key && s.data).map((s, j) => (
+                    s.data.result_count != null && (
+                      <span key={j} style={P.resultBadge}>{s.data.result_count} results found</span>
+                    )
+                  ))}
+                  {isDone && steps.filter(s => s.step === step.key && s.data).map((s, j) => (
+                    s.data.pages_read != null && (
+                      <span key={j} style={P.resultBadge}>{s.data.pages_read} pages extracted</span>
+                    )
+                  ))}
+                </div>
+                {isDone && <div style={P.cardCheck}>✓</div>}
+                {isActive && <div style={P.cardPulse} />}
               </div>
             );
           })}
         </div>
 
-        {/* Progress bar */}
-        <div style={S.progressBarBg}>
-          <div style={S.progressBarFill(completedSteps.size / PIPELINE_STEPS.length)} />
-        </div>
+        {/* Live activity feed */}
+        {activityLog.length > 0 && (
+          <div style={P.activitySection}>
+            <div style={P.activityHeader}>
+              <div style={P.liveDot} />
+              <span style={P.activityTitle}>Live Activity</span>
+            </div>
+            <div style={P.activityList}>
+              {activityLog.map((entry, i) => (
+                <div key={i} style={{ ...P.activityItem, animation: `tickerSlide 0.3s ease ${i * 0.05}s both` }}>
+                  <span style={P.activityTime}>
+                    {new Date(entry.timestamp).toLocaleTimeString("en-US", {hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false})}
+                  </span>
+                  <span style={P.activityText}>{entry.detail}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {error && (
           <div style={S.errorBox}>
@@ -668,6 +785,7 @@ const S = {
   backBtn: {
     background: "none", border: "none", color: "#71717a", fontSize: 14,
     cursor: "pointer", padding: "8px 0", marginBottom: 16,
+    display: "flex", alignItems: "center",
     transition: "color 0.2s",
   },
   formCard: {
@@ -694,7 +812,7 @@ const S = {
     transition: "border-color 0.2s",
   },
 
-  // ── Pipeline ──
+  // ── Pipeline (old styles kept for compat) ──
   pipelineContainer: {
     maxWidth: 560, margin: "0 auto",
     background: "#12121a", borderRadius: 20,
@@ -822,5 +940,265 @@ const S = {
 
   reportContent: {
     fontSize: 14, color: "#d4d4d8", lineHeight: 1.8,
+  },
+};
+
+// ════════════════════════  PIPELINE STYLES  ════════════════════════
+
+const P = {
+  topBar: {
+    display: "flex", justifyContent: "space-between", alignItems: "center",
+    marginBottom: 24,
+  },
+  timer: {
+    display: "flex", alignItems: "center", gap: 8,
+    fontSize: 13, fontWeight: 600, color: "#a1a1aa",
+    background: "rgba(255,255,255,0.04)", padding: "6px 14px",
+    borderRadius: 20, border: "1px solid rgba(255,255,255,0.06)",
+    fontFamily: "'SF Mono', 'Fira Code', monospace",
+  },
+  timerDot: {
+    width: 6, height: 6, borderRadius: "50%",
+    background: "#22c55e", animation: "pulse 1.5s infinite",
+  },
+
+  wrapper: {
+    maxWidth: 640, margin: "0 auto",
+    background: "linear-gradient(180deg, #111118 0%, #0c0c14 100%)",
+    borderRadius: 24, padding: "36px 32px",
+    border: "1px solid rgba(255,255,255,0.06)",
+    boxShadow: `0 0 80px ${ACCENT}08, 0 0 0 1px rgba(255,255,255,0.03) inset`,
+    position: "relative", overflow: "hidden",
+  },
+
+  header: {
+    display: "flex", alignItems: "center", gap: 20, marginBottom: 32,
+    paddingBottom: 24, borderBottom: "1px solid rgba(255,255,255,0.06)",
+  },
+  headerOrb: {
+    width: 56, height: 56, borderRadius: "50%", flexShrink: 0,
+    position: "relative", display: "flex", alignItems: "center", justifyContent: "center",
+  },
+  orbRing: {
+    position: "absolute", inset: 0, borderRadius: "50%",
+    border: `2px solid ${ACCENT}30`,
+    animation: "orbitSpin 3s linear infinite",
+    background: `conic-gradient(from 0deg, transparent, ${ACCENT}40, transparent 70%)`,
+    WebkitMask: "radial-gradient(farthest-side, transparent calc(100% - 3px), #fff calc(100% - 2px))",
+    mask: "radial-gradient(farthest-side, transparent calc(100% - 3px), #fff calc(100% - 2px))",
+  },
+  orbCore: {
+    width: 40, height: 40, borderRadius: "50%",
+    background: `linear-gradient(135deg, ${ACCENT}20, ${ACCENT}08)`,
+    display: "flex", alignItems: "center", justifyContent: "center",
+    border: `1px solid ${ACCENT}30`,
+  },
+  orbSpinner: {
+    width: 20, height: 20, borderRadius: "50%",
+    border: `2px solid ${ACCENT}30`, borderTopColor: ACCENT,
+    animation: "spin 0.8s linear infinite",
+  },
+
+  headerTextBlock: { flex: 1, overflow: "hidden" },
+  headerLabel: {
+    fontSize: 11, fontWeight: 600, color: ACCENT,
+    textTransform: "uppercase", letterSpacing: 2, marginBottom: 4,
+    display: "block",
+  },
+  headerTopic: {
+    fontSize: 20, fontWeight: 700, color: "#fff", margin: 0,
+    whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+  },
+
+  // ── Horizontal progress dots ──
+  progressRow: {
+    display: "flex", alignItems: "flex-start", justifyContent: "center",
+    marginBottom: 24, gap: 0, overflowX: "auto",
+    padding: "0 4px",
+  },
+  progressLine: (active) => ({
+    width: 28, height: 2, alignSelf: "center",
+    marginTop: -10,
+    background: active
+      ? `linear-gradient(90deg, ${ACCENT}, ${ACCENT}80)`
+      : "rgba(255,255,255,0.06)",
+    transition: "background 0.4s ease",
+    borderRadius: 1,
+    flexShrink: 0,
+  }),
+  progressDotWrap: {
+    display: "flex", flexDirection: "column", alignItems: "center",
+    gap: 6, flexShrink: 0,
+  },
+  progressDot: (done, active) => ({
+    width: 20, height: 20, borderRadius: "50%",
+    display: "flex", alignItems: "center", justifyContent: "center",
+    background: done ? ACCENT : active ? `${ACCENT}30` : "rgba(255,255,255,0.04)",
+    border: done ? `2px solid ${ACCENT}` : active ? `2px solid ${ACCENT}80` : "2px solid rgba(255,255,255,0.08)",
+    transition: "all 0.3s ease",
+    ...(active ? { boxShadow: `0 0 12px ${ACCENT}40`, animation: "breathe 2s ease infinite" } : {}),
+    ...(done ? { boxShadow: `0 0 8px ${ACCENT}30` } : {}),
+  }),
+  progressLabel: (done, active) => ({
+    fontSize: 9, fontWeight: 600, color: done ? ACCENT : active ? "#e4e4e7" : "#52525b",
+    textTransform: "uppercase", letterSpacing: 0.5,
+    maxWidth: 54, textAlign: "center", lineHeight: 1.2,
+    transition: "color 0.3s",
+  }),
+
+  // ── Progress bar ──
+  barOuter: {
+    height: 3, borderRadius: 2, background: "rgba(255,255,255,0.04)",
+    overflow: "hidden", marginBottom: 6,
+  },
+  barInner: (pct) => ({
+    width: `${Math.max(pct * 100, 3)}%`, height: "100%", borderRadius: 2,
+    background: `linear-gradient(90deg, ${ACCENT}, #a78bfa, ${ACCENT})`,
+    backgroundSize: "200% 100%",
+    animation: "progressFlow 2s linear infinite",
+    transition: "width 0.6s cubic-bezier(0.4,0,0.2,1)",
+  }),
+  barLabel: {
+    fontSize: 11, color: "#52525b", textAlign: "right", marginBottom: 28,
+    fontWeight: 500,
+  },
+
+  // ── Step cards ──
+  cardsContainer: {
+    display: "flex", flexDirection: "column", gap: 2, marginBottom: 28,
+  },
+  card: (isDone, isActive) => ({
+    display: "flex", gap: 14, padding: "14px 16px",
+    borderRadius: 14, position: "relative",
+    background: isActive
+      ? `linear-gradient(135deg, ${ACCENT}08, ${ACCENT}03)`
+      : isDone
+        ? "rgba(34,197,94,0.03)"
+        : "transparent",
+    border: isActive
+      ? `1px solid ${ACCENT}25`
+      : isDone
+        ? "1px solid rgba(34,197,94,0.08)"
+        : "1px solid transparent",
+    transition: "all 0.3s ease",
+    overflow: "hidden",
+  }),
+
+  cardLeft: {
+    display: "flex", flexDirection: "column", alignItems: "center",
+    gap: 0, flexShrink: 0,
+  },
+  cardIcon: (isDone, isActive) => ({
+    width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+    display: "flex", alignItems: "center", justifyContent: "center",
+    background: isDone
+      ? "linear-gradient(135deg, #22c55e, #16a34a)"
+      : isActive
+        ? `linear-gradient(135deg, ${ACCENT}25, ${ACCENT}12)`
+        : "rgba(255,255,255,0.03)",
+    border: isDone
+      ? "none"
+      : isActive
+        ? `1px solid ${ACCENT}40`
+        : "1px solid rgba(255,255,255,0.06)",
+    transition: "all 0.3s ease",
+    ...(isActive ? { boxShadow: `0 0 16px ${ACCENT}20` } : {}),
+  }),
+  cardSpinner: {
+    width: 16, height: 16, border: `2px solid ${ACCENT}30`,
+    borderTopColor: ACCENT, borderRadius: "50%",
+    animation: "spin 0.8s linear infinite",
+  },
+  cardConnector: (isDone) => ({
+    width: 2, flex: 1, minHeight: 12,
+    background: isDone
+      ? `linear-gradient(180deg, #22c55e, #22c55e40)`
+      : "rgba(255,255,255,0.06)",
+    borderRadius: 1, marginTop: 4,
+    transition: "background 0.4s",
+  }),
+
+  cardBody: { flex: 1, minWidth: 0, paddingTop: 2 },
+  cardHeader: {
+    display: "flex", alignItems: "center", gap: 8, marginBottom: 4,
+  },
+  cardPhase: (isDone, isActive) => ({
+    fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1.5,
+    color: isDone ? "#22c55e" : isActive ? ACCENT : "#3f3f46",
+    padding: "2px 6px", borderRadius: 4,
+    background: isDone ? "rgba(34,197,94,0.1)" : isActive ? `${ACCENT}12` : "transparent",
+    transition: "all 0.3s",
+  }),
+  cardLabel: (isDone, isActive) => ({
+    fontSize: 13, fontWeight: 600,
+    color: isDone ? "#d4d4d8" : isActive ? "#fff" : "#52525b",
+    transition: "color 0.3s",
+  }),
+  cardDesc: (isPending) => ({
+    fontSize: 12, color: isPending ? "#2a2a35" : "#71717a",
+    lineHeight: 1.5, transition: "color 0.3s", margin: 0,
+  }),
+
+  tagRow: {
+    display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8,
+  },
+  tag: {
+    display: "inline-flex", alignItems: "center",
+    fontSize: 10, fontWeight: 500,
+    background: `${ACCENT}10`, color: "#a5b4fc",
+    padding: "3px 10px", borderRadius: 6,
+    border: `1px solid ${ACCENT}15`,
+  },
+  resultBadge: {
+    display: "inline-flex", alignItems: "center", gap: 4,
+    fontSize: 11, fontWeight: 600, color: "#22c55e",
+    marginTop: 6,
+  },
+
+  cardCheck: {
+    color: "#22c55e", fontWeight: 700, fontSize: 14,
+    flexShrink: 0, alignSelf: "center",
+    animation: "expandIn 0.3s ease",
+  },
+  cardPulse: {
+    position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)",
+    width: 8, height: 8, borderRadius: "50%",
+    background: ACCENT, animation: "breathe 1.5s ease infinite",
+    boxShadow: `0 0 12px ${ACCENT}50`,
+  },
+
+  // ── Activity feed ──
+  activitySection: {
+    background: "rgba(255,255,255,0.02)",
+    border: "1px solid rgba(255,255,255,0.04)",
+    borderRadius: 14, padding: "16px 18px",
+    marginBottom: 16,
+  },
+  activityHeader: {
+    display: "flex", alignItems: "center", gap: 8, marginBottom: 12,
+  },
+  liveDot: {
+    width: 6, height: 6, borderRadius: "50%",
+    background: "#22c55e", animation: "pulse 1.5s infinite",
+  },
+  activityTitle: {
+    fontSize: 11, fontWeight: 700, color: "#71717a",
+    textTransform: "uppercase", letterSpacing: 1.5,
+  },
+  activityList: {
+    display: "flex", flexDirection: "column", gap: 6,
+  },
+  activityItem: {
+    display: "flex", gap: 10, alignItems: "flex-start",
+    padding: "6px 10px", borderRadius: 8,
+    background: "rgba(255,255,255,0.02)",
+  },
+  activityTime: {
+    fontSize: 10, fontWeight: 600, color: "#52525b",
+    fontFamily: "'SF Mono', 'Fira Code', monospace",
+    flexShrink: 0, marginTop: 1,
+  },
+  activityText: {
+    fontSize: 12, color: "#a1a1aa", lineHeight: 1.4,
   },
 };
