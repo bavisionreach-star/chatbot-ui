@@ -91,16 +91,16 @@ function buildStyles(t) {
     },
     header: {
       display: "flex", alignItems: "center", justifyContent: "space-between",
-      padding: "14px 20px", borderBottom: `1px solid ${t.border}`, background: t.surface,
+      padding: "14px 20px", borderBottom: `1px solid ${t.userBorder}`, background: t.userBubble,
       flexShrink: 0, gap: 12, transition: "background 0.3s, border-color 0.3s",
     },
     headerLeft: { display: "flex", alignItems: "center", gap: "12px", minWidth: 0, flex: 1 },
     avatar: {
       width: 42, height: 42, borderRadius: 14, flexShrink: 0,
-      background: LOGO_URL ? "transparent" : `linear-gradient(135deg, ${ACCENT}, ${ACCENT}cc)`,
+      background: LOGO_URL ? (t.isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)") : `linear-gradient(135deg, ${ACCENT}, ${ACCENT}cc)`,
       display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: 18, color: "#fff", fontWeight: 700, overflow: "hidden",
-      boxShadow: `0 4px 14px ${ACCENT}25`,
+      fontSize: 18, color: t.isDark ? "#fff" : t.text, fontWeight: 700, overflow: "hidden",
+      boxShadow: `0 4px 14px ${ACCENT}25`, transition: "background 0.3s",
     },
     logoImg: { width: "100%", height: "100%", objectFit: "cover", borderRadius: 14 },
     headerInfo: { minWidth: 0 },
@@ -123,9 +123,10 @@ function buildStyles(t) {
     }),
     botAvatar: {
       width: 36, height: 36, borderRadius: 12, flexShrink: 0, marginTop: 2,
-      background: LOGO_URL ? "transparent" : `linear-gradient(135deg, ${ACCENT}, ${ACCENT}cc)`,
+      background: LOGO_URL ? (t.isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)") : `linear-gradient(135deg, ${ACCENT}, ${ACCENT}cc)`,
       display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: 14, color: "#fff", fontWeight: 700, overflow: "hidden",
+      fontSize: 14, color: t.isDark ? "#fff" : t.text, fontWeight: 700, overflow: "hidden",
+      transition: "background 0.3s",
     },
     botAvatarImg: { width: "100%", height: "100%", objectFit: "cover", borderRadius: 12 },
     userBubble: {
@@ -139,7 +140,7 @@ function buildStyles(t) {
       fontWeight: 400,
     },
     inputBar: {
-      flexShrink: 0, borderTop: `1px solid ${t.border}`, background: t.surface,
+      flexShrink: 0, borderTop: `1px solid ${t.userBorder}`, background: t.userBubble,
       padding: "14px 16px", transition: "background 0.3s, border-color 0.3s",
     },
     inputWrap: {
@@ -181,10 +182,10 @@ function buildStyles(t) {
     welcome: { textAlign: "center", padding: "clamp(40px, 10vh, 80px) 20px", display: "flex", flexDirection: "column", alignItems: "center" },
     welcomeAvatar: {
       width: 80, height: 80, borderRadius: 24, marginBottom: 24,
-      background: LOGO_URL ? "transparent" : `linear-gradient(135deg, ${ACCENT}, ${ACCENT}cc)`,
+      background: LOGO_URL ? (t.isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)") : `linear-gradient(135deg, ${ACCENT}, ${ACCENT}cc)`,
       display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: 34, color: "#fff", fontWeight: 700, overflow: "hidden",
-      boxShadow: `0 16px 48px ${ACCENT}20`,
+      fontSize: 34, color: t.isDark ? "#fff" : t.text, fontWeight: 700, overflow: "hidden",
+      boxShadow: `0 16px 48px ${ACCENT}20`, transition: "background 0.3s",
     },
     welcomeLogoImg: { width: "100%", height: "100%", objectFit: "cover", borderRadius: 24 },
     welcomeTitle: { fontSize: "clamp(22px, 5vw, 30px)", fontWeight: 700, color: t.text, marginBottom: 6, lineHeight: 1.2 },
