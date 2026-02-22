@@ -32,12 +32,12 @@ const darkPalette = {
 };
 
 const lightPalette = {
-  bg: "#fafafa", surface: "#ffffff", surfaceHover: "#f4f4f5",
+  bg: "#F7F4F0", surface: "#FFFDF8", surfaceHover: "#F0ECE6",
   border: "rgba(0,0,0,0.08)", borderHover: "rgba(0,0,0,0.14)",
   text: "#18181b", textSecondary: "#52525b", textMuted: "#71717a", textFaint: "#a1a1aa",
   userBubble: ACCENT + "12", userBorder: ACCENT + "25",
   botBubble: "transparent", botBorder: "transparent",
-  inputBg: "#f4f4f5", codeBg: "rgba(0,0,0,0.03)", codeBorder: "rgba(0,0,0,0.08)",
+  inputBg: "#F0ECE6", codeBg: "rgba(0,0,0,0.03)", codeBorder: "rgba(0,0,0,0.08)",
   shadow: "0 1px 3px rgba(0,0,0,0.08)",
 };
 
@@ -442,7 +442,15 @@ export default function ChatApp() {
               {msg.role === "user" ? (
                 <div style={s.userBubble}>{msg.content}</div>
               ) : msg.content ? (
-                <div style={s.botBubble}><Markdown text={msg.content} t={t} /></div>
+                <div style={s.botBubble}>
+                  <Markdown text={msg.content} t={t} />
+                  {/* End-of-response indicator — only show when not actively streaming this message */}
+                  {!(streaming && i === messages.length - 1) && (
+                    <span style={{ display: "block", marginTop: 12, paddingTop: 8, borderTop: `1px solid ${t.border}`, fontSize: 11, color: t.textFaint, fontWeight: 400, letterSpacing: "0.02em" }}>
+                      end of response
+                    </span>
+                  )}
+                </div>
               ) : (
                 <Typing />
               )}
